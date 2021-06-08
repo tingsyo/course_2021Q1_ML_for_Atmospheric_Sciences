@@ -1,5 +1,5 @@
 #!/bin/bash
-for y in {2009..2009}
+for y in {1998..2018}
     do
         echo $y
         python ../utils/data_summarization_noaagridsatb1_by_image.py -i ../data/noaa/$y -o noaa_$y -l noaa_by_image_$y.log &
