@@ -81,7 +81,7 @@ def fit_ipca_partial(finfo, n_component=2048, batch_size=2048, rseed=0):
             logging.info('The final batch is too small, merge it to the previous batch.')
             limit = nSample
         # Read batch data
-        data = read_multiple_noaagridsatb1(finfo['xuri'].iloc[batch_start:limit], flatten=True)
+        data = read_multiple_prerpocessed_noaagridsatb1(finfo['xuri'].iloc[batch_start:limit], flatten=True)
         logging.debug(data.shape)
         # increment
         batch_start = limit   
@@ -111,7 +111,7 @@ def main():
     logging.debug(args)
     # Get data files
     logging.info('Scanning data files.')
-    datainfo = list_noaagridsatb1_files(args.datapath)
+    datainfo = list_prerpocessed_gridsatb1_files(args.datapath)
     #datainfo.to_csv(args.output+'.file_info.csv', index=False)
     # IncrementalPCA
     logging.info("Performing IncrementalPCA with "+ str(args.n_component)+" components and batch size of " + str(args.batch_size))
