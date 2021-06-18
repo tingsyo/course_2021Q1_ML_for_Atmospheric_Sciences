@@ -30,73 +30,6 @@ NY = 858
 NX = 858
 NC = 1
 
-class CAE(tf.keras.Model):
-  """Convolutional variational autoencoder."""
-
-  def __init__(self, inputx, inputy, latent_dim):
-    super(CAE, self).__init__()
-    self.latent_dim = latent_dim
-    self.inputx = inputx
-    self.inputy = inputy
-    self.encoder = tf.keras.Sequential(
-        [
-            tf.keras.layers.InputLayer(input_shape=(inputx, inputy, 1)),
-            tf.keras.layers.Conv2D(filters=32, kernel_size=3, strides=(2, 2), 
-                activation='relu', name='encoder_conv1'),
-            tf.keras.layers.Conv2D(filters=64, kernel_size=3, strides=(2, 2), 
-                activation='relu', name='encoder_conv2'),
-            tf.keras.layers.Conv2D(filters=128, kernel_size=3, strides=(2, 2), 
-                activation='relu', name='encoder_conv3'),
-            tf.keras.layers.Conv2D(filters=256, kernel_size=3, strides=(2, 2), 
-                activation='relu', name='encoder_conv4'),
-            tf.keras.layers.Flatten(name='encoder_flatten'),
-            # No activation
-            tf.keras.layers.Dense(latent_dim + latent_dim, name='encoder_latent'),
-        ]
-    )
-
-    self.decoder = tf.keras.Sequential(
-        [
-            tf.keras.layers.InputLayer(input_shape=(latent_dim,)),
-            tf.keras.layers.Dense(units=7*7*32, activation=tf.nn.relu),
-            tf.keras.layers.Reshape(target_shape=(7, 7, 32)),
-            tf.keras.layers.Conv2DTranspose(
-                filters=64, kernel_size=3, strides=2, padding='same',
-                activation='relu'),
-            tf.keras.layers.Conv2DTranspose(
-                filters=32, kernel_size=3, strides=2, padding='same',
-                activation='relu'),
-            # No activation
-            tf.keras.layers.Conv2DTranspose(
-                filters=1, kernel_size=3, strides=1, padding='same'),
-        ]
-    )
-
-  @tf.function
-  def sample(self, eps=None):
-    if eps is None:
-      eps = tf.random.normal(shape=(100, self.latent_dim))
-    return self.decode(eps, apply_sigmoid=True)
-
-  def encode(self, x):
-    mean, logvar = tf.split(self.encoder(x), num_or_size_splits=2, axis=1)
-    return mean, logvar
-
-  def reparameterize(self, mean, logvar):
-    eps = tf.random.normal(shape=mean.shape)
-    return eps * tf.exp(logvar * .5) + mean
-
-  def decode(self, z, apply_sigmoid=False):
-    logits = self.decoder(z)
-    if apply_sigmoid:
-      probs = tf.sigmoid(logits)
-      return probs
-    return logits
-
-
-
-
-
 # Utility functions
 def list_prerpocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
     ''' To scan through the sapecified dir and get the corresponding file with suffix. '''
@@ -147,32 +80,47 @@ def data_generator_ae(flist, batch_size, rseed=0):
             batch_start += batch_size   
             batch_end += batch_size
 
+class CAE(tf.keras.Model):
+    """Convolutional autoencoder."""
 
-def initialize_conv_autoencoder_noaagridsatb1(input_shape):
-    ''' The convolutional autoencoder. '''
-    # Define input layer
-    input_data = Input(shape=input_shape)  # adapt this if using `channels_first` image data format
-    # Define encoder layers
-    x = Conv2D(32, (3, 3), activation='relu', padding='same', name='encoder_conv1')(input_data)
-    x = MaxPooling2D((2, 2), name='encoder_maxpool1')(x)
-    x = Conv2D(16, (3, 3), activation='relu', padding='same', name='encoder_conv2')(x)
-    x = MaxPooling2D((3, 3), name='encoder_maxpool2')(x)
-    x = Conv2D(8, (3, 3), activation='relu', padding='same', name='encoder_conv3')(x)
-    encoded = MaxPooling2D((11, 11), name='encoder_maxpool3')(x)
-    # Define decoder layers
-    x = Conv2D(8, (3, 3), activation='relu', padding='same', name='decoder_conv1')(encoded)
-    x = UpSampling2D((11, 11), name='decoder_upsamp1')(x)
-    x = Conv2D(16, (3, 3), activation='relu', padding='same', name='decoder_conv2')(x)
-    x = UpSampling2D((3, 3), name='decoder_upsamp2')(x)
-    x = Conv2D(32, (3, 3), activation='relu', padding='same', name='decoder_conv3')(x)
-    x = UpSampling2D((2, 2), name='decoder_upsamp4')(x)
-    decoded = Conv2D(1, (3, 3), activation='sigmoid', name='decoder_output', padding='same')(x)
-    # Define autoencoder
-    autoencoder = Model(input_data, decoded)
-    autoencoder.compile(optimizer='adam', loss=tf.keras.losses.MeanSquaredError(), metrics=['cosine_similarity'])
-    # Encoder
-    encoder = Model(input_data, encoded)
-    return((autoencoder, encoder))
+    def __init__(self, inputx, inputy):
+        super(CAE, self).__init__()
+        self.inputx = inputx
+        self.inputy = inputy
+        self.encoder = tf.keras.Sequential(
+            [
+                tf.keras.layers.InputLayer(input_shape=(inputx, inputy, 1), name='encoder_input'),
+                tf.keras.layers.Conv2D(filters=128, kernel_size=3, strides=(2, 2), padding='same',
+                    activation='relu', name='encoder_conv1'),
+                tf.keras.layers.Conv2D(filters=256, kernel_size=3, strides=(2, 2), padding='same', 
+                    activation='relu', name='encoder_conv2'),
+                tf.keras.layers.Conv2D(filters=512, kernel_size=3, strides=(2, 2), padding='same', 
+                    activation='relu', name='encoder_conv3'),
+                tf.keras.layers.Conv2D(filters=2, kernel_size=3, strides=(1, 1), padding='same', 
+                    activation='relu', name='encoder_conv4'),
+            ], name='encoder'
+        )
+
+        self.decoder = tf.keras.Sequential(
+            [
+                tf.keras.layers.InputLayer(input_shape=(32,32,2)),
+                tf.keras.layers.Conv2DTranspose(filters=512, kernel_size=3, strides=2, padding='same',
+                    activation='relu', name='decoder_conv1'),
+                tf.keras.layers.Conv2DTranspose(filters=256, kernel_size=3, strides=2, padding='same',
+                    activation='relu', name='decoder_conv2'),
+                tf.keras.layers.Conv2DTranspose(filters=128, kernel_size=3, strides=2, padding='same',
+                    activation='relu', name='decoder_conv3'),
+                # No activation
+                tf.keras.layers.Conv2DTranspose(filters=1, kernel_size=3, strides=1, padding='same', 
+                    activation='sigmoid', name='decoder_outoput'),
+            ], name='decoder'
+        )
+
+    def call(self, x):
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
+        return decoded
+
 
 #-----------------------------------------------------------------------
 def main():
@@ -181,7 +129,7 @@ def main():
     parser.add_argument('--datapath', '-i', help='the directory containing NOAA-GridSat-B1 data in netCDF4 format.')
     parser.add_argument('--output', '-o', help='the prefix of output files.')
     parser.add_argument('--logfile', '-l', default=None, help='the log file.')
-    parser.add_argument('--batch_size', '-b', default=128, type=int, help='the batch size.')
+    parser.add_argument('--batch_size', '-b', default=64, type=int, help='the batch size.')
     parser.add_argument('--random_seed', '-r', default=0, type=int, help='the random seed for shuffling.')
     parser.add_argument('--epochs', '-e', default=1, type=int, help='number of epochs.')
     args = parser.parse_args()
@@ -196,7 +144,7 @@ def main():
     datainfo = list_prerpocessed_gridsatb1_files(args.datapath)
     # Initialize the autoencoder
     logging.info("Building convolutional autoencoder with batch size of " + str(args.batch_size))
-    ae = initialize_conv_autoencoder_noaagridsatb1((NY, NX, NC))
+    cae = CAE(inputx=256, inputy=256)
     # Debug info
     nSample = datainfo.shape[0]
     logging.info(ae[0].summary())
@@ -204,15 +152,12 @@ def main():
     steps_train = np.ceil(nSample/args.batch_size)
     logging.info("Training data steps: " + str(steps_train))
     # Train the autoencoder
-    hist = ae[0].fit(data_generator_ae(datainfo, args.batch_size, rseed=args.random_seed), 
+    hist = ae[0].fit(data_generator_ae(datainfo, args.batch_size), 
         steps_per_epoch=steps_train,
-        epochs=args.epochs,
-        max_queue_size=args.batch_size,
-        verbose=1)
+        epochs=args.epochs)
     # Prepare output
     pd.DataFrame(hist.history).to_csv(args.output+'_hist.csv')
-    ae[0].save(args.output+'_ae.h5')
-    ae[1].save(args.output+'_encoder.h5')
+    cae.save(args.output+'_cae.h5')
     # done
     return(0)
     
