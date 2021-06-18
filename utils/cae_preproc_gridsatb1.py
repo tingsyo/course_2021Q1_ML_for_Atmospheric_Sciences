@@ -58,7 +58,7 @@ def read_multiple_prerpocessed_noaagridsatb1(flist, flatten=False):
         tmp = np.load(f)
         if flatten:
             tmp = tmp.flatten()
-        data.append(tmp)
+        data.append(np.expand_dims(tmp,-1))
     return(np.array(data))
 
 def data_generator_ae(flist, batch_size, rseed=0):
@@ -145,19 +145,20 @@ def main():
     # Initialize the autoencoder
     logging.info("Building convolutional autoencoder with batch size of " + str(args.batch_size))
     cae = CAE(inputx=256, inputy=256)
+    cae.compile(optimizer='adam', loss=tf.keras.losses.MeanSquaredError(), metrics=['cosine_similarity'])
     # Debug info
     nSample = datainfo.shape[0]
-    logging.info(ae[0].summary())
     logging.info("Training autoencoder with data size: "+str(nSample))
     steps_train = np.ceil(nSample/args.batch_size)
     logging.info("Training data steps: " + str(steps_train))
     # Train the autoencoder
-    hist = ae[0].fit(data_generator_ae(datainfo, args.batch_size), 
+    hist = cae.fit(data_generator_ae(datainfo, args.batch_size), 
         steps_per_epoch=steps_train,
         epochs=args.epochs)
+    logging.info(cae.summary())
     # Prepare output
     pd.DataFrame(hist.history).to_csv(args.output+'_hist.csv')
-    cae.save(args.output+'_cae.h5')
+    cae.save_weights(args.output+'_cae_weights')
     # done
     return(0)
     
