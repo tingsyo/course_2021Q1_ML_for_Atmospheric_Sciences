@@ -158,7 +158,7 @@ def main():
     logging.info(cae.summary())
     # Prepare output
     pd.DataFrame(hist.history).to_csv(args.output+'_hist.csv')
-    cae.save_weights(args.output+'_cae_weights')
+    cae.save(args.output+'_model')
     # done
     return(0)
     
