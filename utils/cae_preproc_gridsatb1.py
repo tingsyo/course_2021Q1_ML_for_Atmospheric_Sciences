@@ -30,6 +30,11 @@ NY = 858
 NX = 858
 NC = 1
 
+# To fix cublas not initialized problem
+#config = tf.compat.v1.ConfigProto()
+#config.gpu_options.allow_growth = True
+#sess = tf.compat.v1.Session(config=config)
+
 # Utility functions
 def list_prerpocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
     ''' To scan through the sapecified dir and get the corresponding file with suffix. '''

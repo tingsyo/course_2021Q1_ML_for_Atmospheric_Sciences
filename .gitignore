@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# data and workspace
+data/noaa
+data/256
+data/512
+data/stats_by_grid
+data/stats_by_image
+ws.pca
