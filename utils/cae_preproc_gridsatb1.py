@@ -4,7 +4,8 @@
 This script provide functions to build and to train convolutional 
 autoencoder for pre-processed NOAA-GridSat-B1 dataset.
 
-The autoencoder is developed with Tensorflow(2.4.1).
+The autoencoder is developed and teset with Tensorflow(2.5.0), 
+CUDA 11.1/11.3 with cuDNN 8.1.0/8.2.0.
 '''
 import numpy as np
 import pandas as pd
@@ -26,8 +27,8 @@ __status__ = "development"
 __date__ = '2021-06-15'
 
 # Parameters
-NY = 858
-NX = 858
+NY = 256
+NX = 256
 NC = 1
 
 # To fix cublas not initialized problem
