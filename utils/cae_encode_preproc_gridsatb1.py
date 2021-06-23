@@ -92,20 +92,19 @@ def encode_prerpocessed_noaagridsatb1(model, flist, batch_size):
     # Prepare for results
     results =[]
     # Read in and encode data by batch
-    while True:
-        batch_start = 0
-        batch_end = batch_size
-        while batch_start < nSample:
-            limit = min(batch_end, nSample)
-            logging.info('Encoding batch: '+batch_start+' - '+limit+' of '+nSample+'.')
-            X = read_multiple_prerpocessed_noaagridsatb1(flist['xuri'].iloc[batch_start:limit])
-            encoded = model.encoder(X)
-            # Flatten the encoded data
-            tmp = [v.numpy().flatten() for v in encoded]
-            results += tmp
-            # Increment the loop   
-            batch_start += batch_size   
-            batch_end += batch_size
+    batch_start = 0
+    batch_end = batch_size
+    while batch_start < nSample:
+        limit = min(batch_end, nSample)
+        logging.info('Encoding batch: '+str(batch_start)+' - '+str(limit)+' of '+str(nSample)+'.')
+        X = read_multiple_prerpocessed_noaagridsatb1(flist['xuri'].iloc[batch_start:limit])
+        encoded = model.encoder(X)
+        # Flatten the encoded data
+        tmp = [v.numpy().flatten() for v in encoded]
+        results += tmp
+        # Increment the loop   
+        batch_start += batch_size
+        batch_end += batch_size
     # Return results as an numpy array
     return(np.vstack(results))
 
@@ -141,7 +140,7 @@ def main():
     encoded = encode_prerpocessed_noaagridsatb1(cae, datainfo, args.batch_size)
     # Prepare output
     pd.DataFrame(encoded, index=datainfo['timestamp']).to_csv(args.output+'_encoded.csv')
-    encoded.save(args.output+'_encoded.npy')
+    np.save(args.output+'_encoded.npy', encoded)
     # done
     return(0)
     
