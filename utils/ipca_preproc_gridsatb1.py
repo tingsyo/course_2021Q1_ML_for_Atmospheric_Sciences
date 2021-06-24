@@ -28,7 +28,7 @@ __date__ = '2021-06-08'
 
 
 # Utility functions
-def list_prerpocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
+def list_preprocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
     ''' To scan through the sapecified dir and get the corresponding file with suffix. '''
     import os
     import pandas as pd
@@ -43,11 +43,11 @@ def list_prerpocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
     return(pd.DataFrame(xfiles).sort_values('timestamp').reset_index(drop=True))
 
 # Binary reader
-def read_prerpocessed_gridsatb1(furi):
+def read_preprocessed_gridsatb1(furi):
     import numpy as np
     return(np.load(furi))
 
-def read_multiple_prerpocessed_noaagridsatb1(flist, flatten=False):
+def read_multiple_preprocessed_noaagridsatb1(flist, flatten=False):
     ''' This method reads in a list of NOAA-GridSat-B1 images and returns a numpy array. '''
     import numpy as np
     data = []
@@ -81,7 +81,7 @@ def fit_ipca_partial(finfo, n_component=2048, batch_size=2048, rseed=0):
             logging.info('The final batch is too small, merge it to the previous batch.')
             limit = nSample
         # Read batch data
-        data = read_multiple_prerpocessed_noaagridsatb1(finfo['xuri'].iloc[batch_start:limit], flatten=True)
+        data = read_multiple_preprocessed_noaagridsatb1(finfo['xuri'].iloc[batch_start:limit], flatten=True)
         logging.debug(data.shape)
         # increment
         batch_start = limit   
@@ -111,7 +111,7 @@ def main():
     logging.debug(args)
     # Get data files
     logging.info('Scanning data files.')
-    datainfo = list_prerpocessed_gridsatb1_files(args.datapath)
+    datainfo = list_preprocessed_gridsatb1_files(args.datapath)
     #datainfo.to_csv(args.output+'.file_info.csv', index=False)
     # IncrementalPCA
     logging.info("Performing IncrementalPCA with "+ str(args.n_component)+" components and batch size of " + str(args.batch_size))

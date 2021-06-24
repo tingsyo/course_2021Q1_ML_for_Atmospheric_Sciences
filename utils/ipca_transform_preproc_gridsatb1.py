@@ -24,7 +24,7 @@ __date__ = '2021-06-08'
 
 
 # Utility functions
-def list_prerpocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
+def list_preprocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
     ''' To scan through the sapecified dir and get the corresponding file with suffix. '''
     import os
     import pandas as pd
@@ -39,11 +39,11 @@ def list_prerpocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
     return(pd.DataFrame(xfiles).sort_values('timestamp').reset_index(drop=True))
 
 # Binary reader
-def read_prerpocessed_gridsatb1(furi):
+def read_preprocessed_gridsatb1(furi):
     import numpy as np
     return(np.load(furi))
 
-def read_multiple_prerpocessed_noaagridsatb1(flist, flatten=False):
+def read_multiple_preprocessed_noaagridsatb1(flist, flatten=False):
     ''' This method reads in a list of NOAA-GridSat-B1 images and returns a numpy array. '''
     import numpy as np
     data = []
@@ -71,7 +71,7 @@ def transform_ipca_batch(ipca, finfo, batch_size=1024):
         # Check bound
         limit = min(batch_end, nSample)
         # Read batch data
-        data = read_multiple_prerpocessed_noaagridsatb1(finfo['xuri'].iloc[batch_start:limit], flatten=True)
+        data = read_multiple_preprocessed_noaagridsatb1(finfo['xuri'].iloc[batch_start:limit], flatten=True)
         logging.debug(data.shape)
         # increment
         batch_start = limit   
@@ -101,7 +101,7 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
     logging.debug(args)
     # Get data files
-    datainfo = list_prerpocessed_gridsatb1_files(args.datapath)
+    datainfo = list_preprocessed_gridsatb1_files(args.datapath)
     logging.info('Scanning data files: '+str(datainfo.shape[0]))
     # Load Pre-trained PCA Model
     ipca = joblib.load(args.model_file)

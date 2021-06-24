@@ -10,9 +10,8 @@ CUDA 11.1/11.3 with cuDNN 8.1.0/8.2.0.
 import numpy as np
 import pandas as pd
 import os, argparse, logging, csv, h5py
-import matplotlib.pyplot as plt
 import tensorflow as tf
-
+import tensorflow_hub as hub
 
 __author__ = "Ting-Shuo Yo"
 __copyright__ = "Copyright 2020~2022, DataQualia Lab Co. Ltd."
@@ -47,24 +46,24 @@ def list_preprocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
 # Binary reader
 def read_preprocessed_gridsatb1(furi):
     import numpy as np
-    return(np.load(furi))
+    tmp = np.load(furi)
+    image = np.stack([tmp,tmp,tmp], axis=2)
+    return(image)
 
-def read_multiple_preprocessed_noaagridsatb1(flist, flatten=False):
+def read_multiple_preprocessed_noaagridsatb1(flist):
     ''' This method reads in a list of NOAA-GridSat-B1 images and returns a numpy array. '''
     import numpy as np
     data = []
     for f in flist:
-        tmp = np.load(f)
-        if flatten:
-            tmp = tmp.flatten()
-        data.append(np.expand_dims(tmp,-1))
+        tmp = read_preprocessed_gridsatb1(f)
+        data.append(tmp)
     return(np.array(data))
 
 def encode_preprocessed_noaagridsatb1(model, flist, batch_size):
     ''' Encode the data with pre-trained-model. '''
     nSample = len(flist)
     # Prepare for results
-    results =[]
+    results =None
     # Read in and encode data by batch
     batch_start = 0
     batch_end = batch_size
@@ -72,16 +71,16 @@ def encode_preprocessed_noaagridsatb1(model, flist, batch_size):
         limit = min(batch_end, nSample)
         logging.info('Encoding batch: '+str(batch_start)+' - '+str(limit)+' of '+str(nSample)+'.')
         X = read_multiple_preprocessed_noaagridsatb1(flist['xuri'].iloc[batch_start:limit])
-        z_mean, z_log_var, z = model.encoder(X)
-        # Flatten the encoded data
-        encoded = tf.concat([z_mean, z_log_var], axis=1)
-        tmp = [v.numpy().flatten() for v in encoded]
-        results += tmp
+        features = model.signatures['default'](tf.convert_to_tensor(X))
+        if results is None:
+            results = features['default'].numpy()
+        else:
+            results = np.vstack([results, features['default'].numpy()])
         # Increment the loop   
         batch_start += batch_size
         batch_end += batch_size
     # Return results as an numpy array
-    return(np.vstack(results))
+    return(results)
 
 #-----------------------------------------------------------------------
 def main():
@@ -105,16 +104,15 @@ def main():
     datainfo = list_preprocessed_gridsatb1_files(args.datapath)
     # Load model
     logging.info("Load pre-trained model from " + str(args.model))
-    cvae = tf.keras.models.load_model(args.model)
-    logging.info(cvae.encoder.summary())
+    model = hub.load(args.model)
     # Debug info
     nSample = datainfo.shape[0]
     logging.info("Ecnoding total data size: "+str(nSample))
     # Encode data with the autoencoder
-    encoded = encode_preprocessed_noaagridsatb1(cvae, datainfo, args.batch_size)
+    features = encode_preprocessed_noaagridsatb1(model, datainfo, args.batch_size)
     # Prepare output
-    pd.DataFrame(encoded, index=datainfo['timestamp']).to_csv(args.output+'_encoded.csv')
-    np.save(args.output+'_encoded.npy', encoded)
+    pd.DataFrame(features, index=datainfo['timestamp']).to_csv(args.output+'_features.csv')
+    np.save(args.output+'_features.npy', features)
     # done
     return(0)
     
@@ -123,3 +121,4 @@ def main():
 #==========
 if __name__=="__main__":
     main()
+

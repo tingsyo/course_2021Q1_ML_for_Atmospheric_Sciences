@@ -37,7 +37,7 @@ NC = 1
 #sess = tf.compat.v1.Session(config=config)
 
 # Utility functions
-def list_prerpocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
+def list_preprocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
     ''' To scan through the sapecified dir and get the corresponding file with suffix. '''
     import os
     import pandas as pd
@@ -52,11 +52,11 @@ def list_prerpocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
     return(pd.DataFrame(xfiles).sort_values('timestamp').reset_index(drop=True))
 
 # Binary reader
-def read_prerpocessed_gridsatb1(furi):
+def read_preprocessed_gridsatb1(furi):
     import numpy as np
     return(np.load(furi))
 
-def read_multiple_prerpocessed_noaagridsatb1(flist, flatten=False):
+def read_multiple_preprocessed_noaagridsatb1(flist, flatten=False):
     ''' This method reads in a list of NOAA-GridSat-B1 images and returns a numpy array. '''
     import numpy as np
     data = []
@@ -80,7 +80,7 @@ def data_generator_ae(flist, batch_size, rseed=0):
         batch_end = batch_size
         while batch_start < nSample:
             limit = min(batch_end, nSample)
-            X = read_multiple_prerpocessed_noaagridsatb1(flist['xuri'].iloc[batch_start:limit])
+            X = read_multiple_preprocessed_noaagridsatb1(flist['xuri'].iloc[batch_start:limit])
             #print(X.shape)
             yield (X,X) # a tuple with two numpy arrays with batch_size samples     
             batch_start += batch_size   
@@ -147,7 +147,7 @@ def main():
     logging.debug(args)
     # Get data files
     logging.info('Scanning data files.')
-    datainfo = list_prerpocessed_gridsatb1_files(args.datapath)
+    datainfo = list_preprocessed_gridsatb1_files(args.datapath)
     # Initialize the autoencoder
     logging.info("Building convolutional autoencoder with batch size of " + str(args.batch_size))
     cae = CAE(inputx=256, inputy=256)
