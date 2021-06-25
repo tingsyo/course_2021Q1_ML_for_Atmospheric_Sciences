@@ -91,7 +91,7 @@ class Sampling(tf.keras.layers.Layer):
 
     
 # Define the data dimension
-latent_dim = 1024
+latent_dim = 2048
 inputx = 256
 inputy = 256
 
@@ -173,7 +173,7 @@ class CVAE(tf.keras.Model):
             sim_loss = tf.reduce_mean(tf.keras.losses.cosine_similarity(data, reconstruction))
             kl_loss = -0.5 * (1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var))
             kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
-            total_loss = reconstruction_loss*0.0001 + kl_loss + mse_loss*0.01 + sim_loss
+            total_loss = reconstruction_loss*0.0001 + kl_loss + mse_loss*0.01 + sim_loss*10
         grads = tape.gradient(total_loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
         self.total_loss_tracker.update_state(total_loss)
@@ -234,6 +234,8 @@ def main():
         steps_per_epoch=steps_train,
         epochs=args.epochs)
     logging.info(cvae.summary())
+    logging.info(cvae.encoder.summary())
+    logging.info(cvae.decoder.summary())
     # Prepare output
     pd.DataFrame(hist.history).to_csv(args.output+'_hist.csv')
     cvae.save(args.output+'_model')

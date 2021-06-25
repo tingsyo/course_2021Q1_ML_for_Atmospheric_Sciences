@@ -74,8 +74,7 @@ def encode_preprocessed_noaagridsatb1(model, flist, batch_size):
         X = read_multiple_preprocessed_noaagridsatb1(flist['xuri'].iloc[batch_start:limit])
         z_mean, z_log_var, z = model.encoder(X)
         # Flatten the encoded data
-        encoded = tf.concat([z_mean, z_log_var], axis=1)
-        tmp = [v.numpy().flatten() for v in encoded]
+        tmp = [v.numpy().flatten() for v in z]
         results += tmp
         # Increment the loop   
         batch_start += batch_size
