@@ -215,7 +215,7 @@ def main():
     logging.info('Scanning data files.')
     datainfo = list_preprocessed_gridsatb1_files(args.datapath)
     # Define the data dimension
-    latent_dim = 1024
+    latent_dim = 2048
     inputx = 256
     inputy = 256
     # Initialize the autoencoder
