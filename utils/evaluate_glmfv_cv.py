@@ -122,25 +122,53 @@ def evaluate_fv_event_pair(fv, event, fv_id=None, kfold=5, randseed=123):
 # Parameters
 FV_NAMES = ['PCA', 'CAE', 'CVAE', 'Pretrained-BigEarth', 'Pretrained-ImageNet']
 FV_FILES = ['fv_pca.zip', 'fv_cae.zip', 'fv_cvae.zip', 'fv_ptbe.zip', 'fv_ptin.zip']
-EVENT_NAMES = ['CS', 'TYW', 'NWPTY', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
+#EVENT_NAMES = ['CS', 'TYW', 'NWPTY', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
+EVENT_NAMES = ['TYW', 'NWPTY', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
 EVENT_FILE = 'tad_filtered.csv'
-CV_FOLD = 10
-DATAPATH = '../data/'
 
-events = read_events(DATAPATH+EVENT_FILE, verbose=1)
-results = []
-cv_details = {}
+#-----------------------------------------------------------------------
+def main():
+    # Configure Argument Parser
+    parser = argparse.ArgumentParser(description='Evaluate the performance of GLM with various feature vectors and events.')
+    parser.add_argument('--datapath', '-i', help='the directory containing feature vectors.')
+    parser.add_argument('--output', '-o', help='the prefix of output files.')
+    parser.add_argument('--logfile', '-l', default=None, help='the log file.')
+    parser.add_argument('--random_seed', '-r', default=0, type=int, help='the random seed for shuffling.')
+    parser.add_argument('--number_of_cv_fold', '-k', default=10, help='the number of folds for cross validation.')
+    args = parser.parse_args()
+    # Set up logging
+    if not args.logfile is None:
+        logging.basicConfig(level=logging.DEBUG, filename=args.logfile, filemode='w')
+    else:
+        logging.basicConfig(level=logging.DEBUG)
+    logging.debug(args)
+    # Setup parameters
+    DATAPATH = args.datapath
+    NUM_FOLD = args.number_of_cv_fold
+    # Load data
+    events = read_events(DATAPATH+EVENT_FILE, verbose=1)
+    # Preparing output
+    results = []
+    cv_details = {}
+    # Loop through 
+    for i in range(len(FV_NAMES)):
+        for j in range(len(EVENT_NAMES)):
+            fv = pd.read_csv(DATAPATH+FV_FILES[i], compression='zip', index_col=0)
+            fv_name = FV_NAMES[i]
+            event_name = EVENT_NAMES[j]
+            exp_id = fv_name+'-'+event_name
+            print(exp_id)
+            eval_all, eval_cv = evaluate_fv_event_pair(fv, events[event_name], fv_id=exp_id, kfold=NUM_FOLD)
+            results.append(eval_all)
+            cv_details[exp_id] = eval_cv
+    # Write output
+    pd.DataFrame(results).to_csv('exp_results.csv', index=False)
+    # done
+    return(0)
+    
+#==========
+# Script
+#==========
+if __name__=="__main__":
+    main()
 
-# Loop
-for i in range(len(FV_NAMES)):
-    for j in range(len(EVENT_NAMES)):
-        fv = pd.read_csv(DATAPATH+FV_FILES[i], compression='zip', index_col=0)
-        fv_name = FV_NAMES[i]
-        event_name = EVENT_NAMES[j]
-        exp_id = fv_name+'-'+event_name
-        print(exp_id)
-        eval_all, eval_cv = evaluate_fv_event_pair(fv, events[event_name], fv_id=exp_id, kfold=5)
-        results.append(eval_all)
-        cv_details[exp_id] = eval_cv
-
-pd.DataFrame(results).to_csv('exp_results.csv', index=False)
