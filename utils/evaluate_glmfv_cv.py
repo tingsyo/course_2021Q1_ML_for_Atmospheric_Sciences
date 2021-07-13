@@ -7,7 +7,7 @@ The code is developed and teset with Python 3.7, scikit-learn 0.24.2
 '''
 import numpy as np
 import pandas as pd
-import os, argparse, logging, csv, re
+import os, argparse, logging, csv, re, json
 
 __author__ = "Ting-Shuo Yo"
 __copyright__ = "Copyright 2020~2022, DataQualia Lab Co. Ltd."
@@ -91,19 +91,38 @@ def create_cv_folds(x, y, kfold=5, randseed=123):
     return((splits, x, y, dates))
 
 # Evaluate one FV-Event pair
-def evaluate_fv_event_pair(fv, event, fv_id=None, kfold=5, randseed=123):
+def evaluate_fv_event_pair(fv, event, fv_id=None, kfold=5, randseed=123, glm_params=None):
     from sklearn.model_selection import StratifiedKFold
     from sklearn.linear_model import LogisticRegression
     from sklearn.model_selection import cross_val_predict, cross_validate
+    # Parse parameters for GLM
+    if glm_params is not None:
+        glm_penalty = glm_params["penalty"]
+        glm_dual = glm_params["dual"]=="True"
+        glm_tol = glm_params["tol"]
+        glm_C = glm_params["C"]
+        glm_solver = glm_params["solver"]
+        glm_max_iter = glm_params["max_iter"]
+        if glm_params["calss_weight"]!="None":
+            glm_cw = glm_params["calss_weight"]
+        else:
+            glm_cw = None
+        if glm_params["l1_ratio"]!="None":
+            glm_l1_ratio = glm_params["l1_ratio"]
+        else:
+            glm_l1_ratio = None
     # Create CV folds
     x, y, dates = clean_nans(x=fv, y=event)
     skf = StratifiedKFold(n_splits=kfold, shuffle=True, random_state=randseed)
-    clf = LogisticRegression(dual=True,
-                             C=1.0,
-                             class_weight='balanced', 
-                             random_state=0,
-                             solver='liblinear',
-                             max_iter=10000)
+    clf = LogisticRegression(penalty=glm_penalty,
+                             dual=glm_dual,
+                             tol=glm_tol,
+                             C=glm_C,
+                             class_weight=glm_cw, 
+                             random_state=randseed,
+                             solver=glm_solver,
+                             max_iter=glm_max_iter,
+                             l1_ratio=glm_l1_ratio)
     # Get predictions from CV
     y_pred = cross_val_predict(clf, x, y, cv=skf)
     eval_all = evaluate_binary(y, y_pred, id=fv_id)
@@ -131,8 +150,9 @@ def main():
     # Configure Argument Parser
     parser = argparse.ArgumentParser(description='Evaluate the performance of GLM with various feature vectors and events.')
     parser.add_argument('--datapath', '-i', help='the directory containing feature vectors.')
-    parser.add_argument('--output', '-o', help='the prefix of output files.')
+    parser.add_argument('--output', '-o', default='exp.csv', help='the prefix of output files.')
     parser.add_argument('--logfile', '-l', default=None, help='the log file.')
+    parser.add_argument('--config_file', '-c', default=None, help='the configuration file.')
     parser.add_argument('--random_seed', '-r', default=0, type=int, help='the random seed for shuffling.')
     parser.add_argument('--number_of_cv_fold', '-k', default=10, help='the number of folds for cross validation.')
     args = parser.parse_args()
@@ -142,6 +162,13 @@ def main():
     else:
         logging.basicConfig(level=logging.DEBUG)
     logging.debug(args)
+    # Load configuration file if specified
+    OUTPUT_FILE = None
+    GLM_PARAMS = None
+    if not args.config_file is None:
+        conf = json.load(open(args.config_file, 'r'))
+        OUTPUT_FILE = conf['output_file']
+        GLM_PARAMS = conf['glm']
     # Setup parameters
     DATAPATH = args.datapath
     NUM_FOLD = args.number_of_cv_fold
@@ -158,7 +185,9 @@ def main():
             event_name = EVENT_NAMES[j]
             exp_id = fv_name+'-'+event_name
             print(exp_id)
-            eval_all, eval_cv = evaluate_fv_event_pair(fv, events[event_name], fv_id=exp_id, kfold=NUM_FOLD)
+            eval_all, eval_cv = evaluate_fv_event_pair(fv, events[event_name], fv_id=exp_id, kfold=NUM_FOLD, glm_params=GLM_PARAMS)
+            eval['feature'] = fv_name
+            eval['event'] = event_name
             results.append(eval_all)
             cv_details[exp_id] = eval_cv
     # Write output
