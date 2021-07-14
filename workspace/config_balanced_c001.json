@@ -1,0 +1,15 @@
+{
+    "output_file": "exp_balanced_c001.csv",
+    "glm": {
+        "penalty": "l2",
+        "dual": "False",
+        "tol": 1e-4,
+        "C": 0.01,
+        "fit_intercept": "True",
+        "intercept_scaling": 1.0,
+        "calss_weight": "balanced",
+        "solver": "lbfgs",
+        "max_iter": 10000,
+        "l1_ratio": "None"
+    }
+}
