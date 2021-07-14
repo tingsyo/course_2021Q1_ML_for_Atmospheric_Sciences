@@ -1,0 +1,15 @@
+{
+    "output_file": "exp_dual_balanced_c05.csv",
+    "glm": {
+        "penalty": "l2",
+        "dual": "True",
+        "tol": 1e-4,
+        "C": 0.5,
+        "fit_intercept": "True",
+        "intercept_scaling": 1.0,
+        "calss_weight": "balanced",
+        "solver": "liblinear",
+        "max_iter": 10000,
+        "l1_ratio": "None"
+    }
+}
