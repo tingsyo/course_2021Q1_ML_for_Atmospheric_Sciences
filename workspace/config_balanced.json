@@ -1,5 +1,5 @@
 {
-    "output_file": "exp_default.csv",
+    "output_file": "exp_balanced.csv",
     "glm": {
         "penalty": "l2",
         "dual": "False",
@@ -7,7 +7,7 @@
         "C": 1.0,
         "fit_intercept": "True",
         "intercept_scaling": 1.0,
-        "calss_weight": "None",
+        "calss_weight": "balanced",
         "solver": "lbfgs",
         "max_iter": 10000,
         "l1_ratio": "None"

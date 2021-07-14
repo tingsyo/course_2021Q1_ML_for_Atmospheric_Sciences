@@ -1,10 +1,10 @@
 {
-    "output_file": "exp_default.csv",
+    "output_file": "exp_c08.csv",
     "glm": {
         "penalty": "l2",
         "dual": "False",
         "tol": 1e-4,
-        "C": 1.0,
+        "C": 0.8,
         "fit_intercept": "True",
         "intercept_scaling": 1.0,
         "calss_weight": "None",

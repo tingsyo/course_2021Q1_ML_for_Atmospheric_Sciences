@@ -13,7 +13,7 @@ __author__ = "Ting-Shuo Yo"
 __copyright__ = "Copyright 2020~2022, DataQualia Lab Co. Ltd."
 __credits__ = ["Ting-Shuo Yo"]
 __license__ = "Apache License 2.0"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __maintainer__ = "Ting-Shuo Yo"
 __email__ = "tingyo@dataqualia.com"
 __status__ = "development"
@@ -142,7 +142,7 @@ def evaluate_fv_event_pair(fv, event, fv_id=None, kfold=5, randseed=123, glm_par
 FV_NAMES = ['PCA', 'CAE', 'CVAE', 'Pretrained-BigEarth', 'Pretrained-ImageNet']
 FV_FILES = ['fv_pca.zip', 'fv_cae.zip', 'fv_cvae.zip', 'fv_ptbe.zip', 'fv_ptin.zip']
 #EVENT_NAMES = ['CS', 'TYW', 'NWPTY', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
-EVENT_NAMES = ['TYW', 'NWPTY', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
+EVENT_NAMES = ['NWPTY', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
 EVENT_FILE = 'tad_filtered.csv'
 
 #-----------------------------------------------------------------------
@@ -186,12 +186,14 @@ def main():
             exp_id = fv_name+'-'+event_name
             print(exp_id)
             eval_all, eval_cv = evaluate_fv_event_pair(fv, events[event_name], fv_id=exp_id, kfold=NUM_FOLD, glm_params=GLM_PARAMS)
-            eval['feature'] = fv_name
-            eval['event'] = event_name
+            eval_all['feature'] = fv_name
+            eval_all['event'] = event_name
             results.append(eval_all)
             cv_details[exp_id] = eval_cv
     # Write output
-    pd.DataFrame(results).to_csv('exp_results.csv', index=False)
+    if OUTPUT_FILE is None:
+        OUTPUT_FILE = args.output
+    pd.DataFrame(results).to_csv(OUTPUT_FILE, index=False)
     # done
     return(0)
     

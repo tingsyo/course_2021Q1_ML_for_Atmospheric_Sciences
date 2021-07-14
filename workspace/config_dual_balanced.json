@@ -1,14 +1,14 @@
 {
-    "output_file": "exp_default.csv",
+    "output_file": "exp_dual_balanced.csv",
     "glm": {
         "penalty": "l2",
-        "dual": "False",
+        "dual": "True",
         "tol": 1e-4,
         "C": 1.0,
         "fit_intercept": "True",
         "intercept_scaling": 1.0,
-        "calss_weight": "None",
-        "solver": "lbfgs",
+        "calss_weight": "balanced",
+        "solver": "liblinear",
         "max_iter": 10000,
         "l1_ratio": "None"
     }
