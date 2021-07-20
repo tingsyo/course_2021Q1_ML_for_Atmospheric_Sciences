@@ -23,8 +23,8 @@ __status__ = "development"
 __date__ = '2021-06-15'
 
 # Parameters
-NY = 256
-NX = 256
+NY = 512
+NX = 512
 NC = 1
 
 # Utility functions
@@ -92,8 +92,8 @@ class Sampling(tf.keras.layers.Layer):
     
 # Define the data dimension
 latent_dim = 2048
-inputx = 256
-inputy = 256
+inputx = NX
+inputy = NY
 
 # Define the encoder
 def build_encoder(inputx, inputy, latent_dim, base_filter=4):
@@ -103,6 +103,7 @@ def build_encoder(inputx, inputy, latent_dim, base_filter=4):
     x = tf.keras.layers.Conv2D(base_filter, 3, activation="relu", strides=2, padding="same", name='conv1')(encoder_inputs)
     x = tf.keras.layers.Conv2D(base_filter*2, 3, activation="relu", strides=2, padding="same", name='conv2')(x)
     x = tf.keras.layers.Conv2D(base_filter*4, 3, activation="relu", strides=2, padding="same", name='conv3')(x)
+    x = tf.keras.layers.Conv2D(base_filter*8, 3, activation="relu", strides=2, padding="same", name='conv4')(x)
     # Map the convolutional kernels to Gaussian distributions
     x = tf.keras.layers.Flatten(name='flatten')(x)
     x = tf.keras.layers.Dense(base_filter*8, activation="relu", name='dense')(x)
@@ -122,11 +123,12 @@ def build_decoder(latent_dim, base_filter=4):
     x = tf.keras.layers.Dense(32 * 32 * base_filter*8, activation="relu")(latent_inputs)
     x = tf.keras.layers.Reshape((32, 32, base_filter*8))(x)
     # Increase the dimension with Conv2DTranspose
-    x = tf.keras.layers.Conv2DTranspose(base_filter*4, 3, activation="relu", strides=2, padding="same", name='convtr_1')(x)
-    x = tf.keras.layers.Conv2DTranspose(base_filter*2, 3, activation="relu", strides=2, padding="same", name='convtr_2')(x)
-    x = tf.keras.layers.Conv2DTranspose(base_filter, 3, activation="relu", strides=2, padding="same", name='convtr_3')(x)
+    x = tf.keras.layers.Conv2DTranspose(base_filter*8, 3, activation="relu", strides=2, padding="same", name='convtr_1')(x)
+    x = tf.keras.layers.Conv2DTranspose(base_filter*4, 3, activation="relu", strides=2, padding="same", name='convtr_2')(x)
+    x = tf.keras.layers.Conv2DTranspose(base_filter*2, 3, activation="relu", strides=2, padding="same", name='convtr_3')(x)
+    x = tf.keras.layers.Conv2DTranspose(base_filter, 3, activation="relu", strides=2, padding="same", name='convtr_4')(x)
     # Output to the original space
-    decoder_outputs = tf.keras.layers.Conv2DTranspose(1, 3, activation="sigmoid", padding="same", name='convtr_4')(x)
+    decoder_outputs = tf.keras.layers.Conv2DTranspose(1, 3, activation="sigmoid", padding="same", name='convtr_5')(x)
     # Define the decoder model
     decoder = tf.keras.Model(latent_inputs, decoder_outputs, name="decoder")
     decoder.summary()
@@ -201,7 +203,7 @@ def main():
     parser.add_argument('--datapath', '-i', help='the directory containing NOAA-GridSat-B1 data in netCDF4 format.')
     parser.add_argument('--output', '-o', help='the prefix of output files.')
     parser.add_argument('--logfile', '-l', default=None, help='the log file.')
-    parser.add_argument('--batch_size', '-b', default=64, type=int, help='the batch size.')
+    parser.add_argument('--batch_size', '-b', default=32, type=int, help='the batch size.')
     parser.add_argument('--filter_size', '-f', default=4, type=int, help='the base filter size.')
     parser.add_argument('--random_seed', '-r', default=0, type=int, help='the random seed for shuffling.')
     parser.add_argument('--epochs', '-e', default=1, type=int, help='number of epochs.')
@@ -217,8 +219,8 @@ def main():
     datainfo = list_preprocessed_gridsatb1_files(args.datapath)
     # Define the data dimension
     latent_dim = 2048
-    inputx = 256
-    inputy = 256
+    inputx = 512
+    inputy = 512
     # Initialize the autoencoder
     logging.info("Building convolutional autoencoder with batch size of " + str(args.batch_size))
     encoder = build_encoder(inputx, inputy, latent_dim, args.filter_size)
