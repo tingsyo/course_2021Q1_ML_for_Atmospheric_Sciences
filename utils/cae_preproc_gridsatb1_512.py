@@ -89,18 +89,20 @@ def data_generator_ae(flist, batch_size, rseed=0):
 class CAE(tf.keras.Model):
     """Convolutional autoencoder."""
 
-    def __init__(self, inputx, inputy):
+    def __init__(self, inputx, inputy, base_filter=4):
         super(CAE, self).__init__()
         self.inputx = inputx
         self.inputy = inputy
         self.encoder = tf.keras.Sequential(
             [
                 tf.keras.layers.InputLayer(input_shape=(inputx, inputy, 1), name='encoder_input'),
-                tf.keras.layers.Conv2D(filters=128, kernel_size=3, strides=(2, 2), padding='same',
+                tf.keras.layers.Conv2D(filters=base_filter, kernel_size=3, strides=(2, 2), padding='same',
+                    activation='relu', name='encoder_conv0'),
+                tf.keras.layers.Conv2D(filters=base_filter*2, kernel_size=3, strides=(2, 2), padding='same',
                     activation='relu', name='encoder_conv1'),
-                tf.keras.layers.Conv2D(filters=256, kernel_size=3, strides=(2, 2), padding='same', 
+                tf.keras.layers.Conv2D(filters=base_filter*4, kernel_size=3, strides=(2, 2), padding='same', 
                     activation='relu', name='encoder_conv2'),
-                tf.keras.layers.Conv2D(filters=512, kernel_size=3, strides=(2, 2), padding='same', 
+                tf.keras.layers.Conv2D(filters=base_filter*8, kernel_size=3, strides=(2, 2), padding='same', 
                     activation='relu', name='encoder_conv3'),
                 tf.keras.layers.Conv2D(filters=2, kernel_size=3, strides=(1, 1), padding='same', 
                     activation='relu', name='encoder_conv4'),
@@ -110,12 +112,14 @@ class CAE(tf.keras.Model):
         self.decoder = tf.keras.Sequential(
             [
                 tf.keras.layers.InputLayer(input_shape=(32,32,2)),
-                tf.keras.layers.Conv2DTranspose(filters=512, kernel_size=3, strides=2, padding='same',
+                tf.keras.layers.Conv2DTranspose(filters=base_filter*16, kernel_size=3, strides=2, padding='same',
                     activation='relu', name='decoder_conv1'),
-                tf.keras.layers.Conv2DTranspose(filters=256, kernel_size=3, strides=2, padding='same',
+                tf.keras.layers.Conv2DTranspose(filters=base_filter*8, kernel_size=3, strides=2, padding='same',
                     activation='relu', name='decoder_conv2'),
-                tf.keras.layers.Conv2DTranspose(filters=128, kernel_size=3, strides=2, padding='same',
+                tf.keras.layers.Conv2DTranspose(filters=base_filter*4, kernel_size=3, strides=2, padding='same',
                     activation='relu', name='decoder_conv3'),
+                tf.keras.layers.Conv2DTranspose(filters=base_filter*2, kernel_size=3, strides=2, padding='same',
+                    activation='relu', name='decoder_conv4'),                
                 # No activation
                 tf.keras.layers.Conv2DTranspose(filters=1, kernel_size=3, strides=1, padding='same', 
                     activation='sigmoid', name='decoder_outoput'),
@@ -136,6 +140,7 @@ def main():
     parser.add_argument('--output', '-o', help='the prefix of output files.')
     parser.add_argument('--logfile', '-l', default=None, help='the log file.')
     parser.add_argument('--batch_size', '-b', default=64, type=int, help='the batch size.')
+    parser.add_argument('--filter_size', '-f', default=4, type=int, help='the base filter size.')
     parser.add_argument('--random_seed', '-r', default=0, type=int, help='the random seed for shuffling.')
     parser.add_argument('--epochs', '-e', default=1, type=int, help='number of epochs.')
     args = parser.parse_args()
@@ -150,7 +155,7 @@ def main():
     datainfo = list_preprocessed_gridsatb1_files(args.datapath)
     # Initialize the autoencoder
     logging.info("Building convolutional autoencoder with batch size of " + str(args.batch_size))
-    cae = CAE(inputx=256, inputy=256)
+    cae = CAE(inputx=512, inputy=512, base_filter=args.filter_size)
     cae.compile(optimizer='adam', loss=tf.keras.losses.MeanSquaredError(), metrics=['cosine_similarity'])
     # Debug info
     nSample = datainfo.shape[0]
