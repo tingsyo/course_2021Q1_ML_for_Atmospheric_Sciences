@@ -22,10 +22,6 @@ __email__ = "tingyo@dataqualia.com"
 __status__ = "development"
 __date__ = '2021-06-15'
 
-# Parameters
-NY = 256
-NX = 256
-NC = 1
 
 # Utility functions
 def list_preprocessed_gridsatb1_files(dir, suffix='.npy', to_remove=['.npy']):
@@ -89,11 +85,6 @@ class Sampling(tf.keras.layers.Layer):
         epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
         return z_mean + tf.exp(0.5 * z_log_var) * epsilon
 
-    
-# Define the data dimension
-latent_dim = 2048
-inputx = 256
-inputy = 256
 
 # Define the encoder
 def build_encoder(inputx, inputy, latent_dim, base_filter=4):
@@ -111,7 +102,6 @@ def build_encoder(inputx, inputy, latent_dim, base_filter=4):
     z = Sampling()([z_mean, z_log_var])
     # Define the encoder model
     encoder = tf.keras.Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
-    encoder.summary()
     return(encoder)
 
 # Define the decoder
@@ -129,7 +119,6 @@ def build_decoder(latent_dim, base_filter=4):
     decoder_outputs = tf.keras.layers.Conv2DTranspose(1, 3, activation="sigmoid", padding="same", name='convtr_4')(x)
     # Define the decoder model
     decoder = tf.keras.Model(latent_inputs, decoder_outputs, name="decoder")
-    decoder.summary()
     return(decoder)
 
 # Define the autoencoder
@@ -139,54 +128,38 @@ class CVAE(tf.keras.Model):
         self.encoder = encoder
         self.decoder = decoder
         self.total_loss_tracker = tf.keras.metrics.Mean(name="total_loss")
-        self.reconstruction_loss_tracker = tf.keras.metrics.Mean(
-            name="reconstruction_loss"
-        )
         self.kl_loss_tracker = tf.keras.metrics.Mean(name="kl_loss")
-        self.mse_loss_tracker = tf.keras.metrics.Mean(name="mse_loss")
-        self.sim_loss_tracker = tf.keras.metrics.Mean(name="sim_loss")
+        self.rmse_loss_tracker = tf.keras.metrics.Mean(name="rmse_loss")
 
     @property
     def metrics(self):
         return [
             self.total_loss_tracker,
-            self.reconstruction_loss_tracker,
             self.kl_loss_tracker,
-            self.mse_loss_tracker,
-            self.sim_loss_tracker,
+            self.rmse_loss_tracker,
         ]
 
     def train_step(self, data):
         with tf.GradientTape() as tape:
             z_mean, z_log_var, z = self.encoder(data)
             reconstruction = self.decoder(z)
-            reconstruction_loss = tf.reduce_mean(
-                tf.reduce_sum(
-                    tf.keras.metrics.binary_crossentropy(data, reconstruction), axis=(1, 2)
-                )
-            )
-            mse_loss = tf.reduce_mean(
-                tf.reduce_sum(
+            rmse_loss = tf.math.sqrt(
+                tf.reduce_mean(
                     tf.keras.metrics.mean_squared_error(data, reconstruction), axis=(1, 2)
                 )
             )
-            sim_loss = tf.reduce_mean(tf.keras.losses.cosine_similarity(data, reconstruction))
             kl_loss = -0.5 * (1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var))
             kl_loss = tf.reduce_mean(tf.reduce_sum(kl_loss, axis=1))
-            total_loss = reconstruction_loss*0.0001 + kl_loss + mse_loss*0.01 + sim_loss*10
+            total_loss = kl_loss*0.1 + rmse_loss
         grads = tape.gradient(total_loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
         self.total_loss_tracker.update_state(total_loss)
-        self.reconstruction_loss_tracker.update_state(reconstruction_loss)
         self.kl_loss_tracker.update_state(kl_loss)
-        self.mse_loss_tracker.update_state(mse_loss)
-        self.sim_loss_tracker.update_state(sim_loss)
+        self.rmse_loss_tracker.update_state(rmse_loss)
         return {
             "loss": self.total_loss_tracker.result(),
-            "reconstruction_loss": self.reconstruction_loss_tracker.result(),
             "kl_loss": self.kl_loss_tracker.result(),
-            "mse_loss": self.mse_loss_tracker.result(),
-            "sim_loss": self.sim_loss_tracker.result(),
+            "rmse_loss": self.rmse_loss_tracker.result(),
         }
     
     def call(self, x):
@@ -224,7 +197,7 @@ def main():
     encoder = build_encoder(inputx, inputy, latent_dim, args.filter_size)
     decoder = build_decoder(latent_dim, args.filter_size)
     cvae = CVAE(encoder, decoder)
-    cvae.compile(optimizer=tf.keras.optimizers.Adam())
+    cvae.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001))
     # Debug info
     nSample = datainfo.shape[0]
     logging.info("Training autoencoder with data size: "+str(nSample))
