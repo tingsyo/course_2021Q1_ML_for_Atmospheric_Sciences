@@ -1,5 +1,5 @@
 {
-    "output_file": "exp_dual_balanced_c001.csv",
+    "output_file": "exp512_dual_balanced_c001.csv",
     "FV_NAMES": "['PCA', 'CAE', 'CVAE', 'PTBE', 'PTIN']",
     "FV_FILES": "['fv_pca_512.zip', 'fv_cae_512.zip', 'fv_cvae_512.zip', 'fv_ptbe_512.zip', 'fv_ptin_512.zip']",
     "glm": {

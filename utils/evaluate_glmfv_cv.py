@@ -91,7 +91,7 @@ def create_cv_folds(x, y, kfold=5, randseed=123):
     return((splits, x, y, dates))
 
 # Evaluate one FV-Event pair
-def evaluate_fv_event_pair(fv, event, fv_id=None, kfold=5, randseed=123, glm_params=None):
+def evaluate_fv_event_pair(fv, event, fv_id=None, kfold=5, randseed=777, glm_params=None):
     from sklearn.model_selection import StratifiedKFold
     from sklearn.linear_model import LogisticRegression
     from sklearn.model_selection import cross_val_predict, cross_validate
