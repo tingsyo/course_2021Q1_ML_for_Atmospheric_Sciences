@@ -1,5 +1,7 @@
 {
     "output_file": "exp_default.csv",
+    "FV_NAMES": "['PCA', 'CAE', 'CVAE', 'PTBE', 'PTIN']",
+    "FV_FILES": "['fv_pca.zip', 'fv_cae_256.zip', 'fv_cvae_256.zip', 'fv_ptbe.zip', 'fv_ptin.zip']",
     "glm": {
         "penalty": "l2",
         "dual": "False",

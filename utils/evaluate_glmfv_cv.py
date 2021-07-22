@@ -139,8 +139,8 @@ def evaluate_fv_event_pair(fv, event, fv_id=None, kfold=5, randseed=123, glm_par
 
 ### Main Script ###
 # Parameters
-FV_NAMES = ['PCA', 'CAE', 'CVAE', 'Pretrained-BigEarth', 'Pretrained-ImageNet']
-FV_FILES = ['fv_pca.zip', 'fv_cae.zip', 'fv_cvae.zip', 'fv_ptbe.zip', 'fv_ptin.zip']
+FV_NAMES = ['PCA', 'CAE', 'CVAE', 'PTBE', 'PTIN']
+FV_FILES = ['fv_pca.zip', 'fv_cae_256.zip', 'fv_cvae_256.zip', 'fv_ptbe.zip', 'fv_ptin.zip']
 #EVENT_NAMES = ['CS', 'TYW', 'NWPTY', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
 EVENT_NAMES = ['NWPTY', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
 EVENT_FILE = 'tad_filtered.csv'
@@ -168,6 +168,8 @@ def main():
     if not args.config_file is None:
         conf = json.load(open(args.config_file, 'r'))
         OUTPUT_FILE = conf['output_file']
+        FV_NAMES = eval(conf['FV_NAMES'])
+        FV_FILES = eval(conf['FV_FILES'])
         GLM_PARAMS = conf['glm']
     # Setup parameters
     DATAPATH = args.datapath
