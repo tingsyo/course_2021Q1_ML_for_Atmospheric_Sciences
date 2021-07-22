@@ -91,7 +91,7 @@ def create_cv_folds(x, y, kfold=5, randseed=123):
     return((splits, x, y, dates))
 
 # Evaluate one FV-Event pair
-def evaluate_fv_event_pair(fv, event, fv_id=None, kfold=5, randseed=777, glm_params=None):
+def evaluate_fv_event_pair(fv, event, fv_id=None, kfold=5, randseed=0, glm_params=None):
     from sklearn.model_selection import StratifiedKFold
     from sklearn.linear_model import LogisticRegression
     from sklearn.model_selection import cross_val_predict, cross_validate
@@ -142,7 +142,7 @@ def evaluate_fv_event_pair(fv, event, fv_id=None, kfold=5, randseed=777, glm_par
 FV_NAMES = ['PCA', 'CAE', 'CVAE', 'PTBE', 'PTIN']
 FV_FILES = ['fv_pca.zip', 'fv_cae_256.zip', 'fv_cvae_256.zip', 'fv_ptbe.zip', 'fv_ptin.zip']
 #EVENT_NAMES = ['CS', 'TYW', 'NWPTY', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
-EVENT_NAMES = ['NWPTY', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
+EVENT_NAMES = ['NWPTC', 'FT', 'NE', 'SWF', 'HRD', 'HRH']
 EVENT_FILE = 'tad_filtered.csv'
 
 #-----------------------------------------------------------------------
@@ -154,7 +154,7 @@ def main():
     parser.add_argument('--logfile', '-l', default=None, help='the log file.')
     parser.add_argument('--config_file', '-c', default=None, help='the configuration file.')
     parser.add_argument('--random_seed', '-r', default=0, type=int, help='the random seed for shuffling.')
-    parser.add_argument('--number_of_cv_fold', '-k', default=10, help='the number of folds for cross validation.')
+    parser.add_argument('--number_of_cv_fold', '-k', default=10, type=int, help='the number of folds for cross validation.')
     args = parser.parse_args()
     # Set up logging
     if not args.logfile is None:
@@ -187,6 +187,8 @@ def main():
             event_name = EVENT_NAMES[j]
             exp_id = fv_name+'-'+event_name
             print(exp_id)
+            print('Feature vector shape:'+str(fv.shape))
+            print('Event frequency:'+str(events[event_name].sum()))
             eval_all, eval_cv = evaluate_fv_event_pair(fv, events[event_name], fv_id=exp_id, kfold=NUM_FOLD, glm_params=GLM_PARAMS)
             eval_all['feature'] = fv_name
             eval_all['event'] = event_name
